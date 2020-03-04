@@ -16,6 +16,10 @@ print(len(sleep_subsample.iloc[0]['eeg']))
 cleaned_pandas_dataframe - A pandas dataframe of the format sent to me as sleep_subsample.pkl
 
 VStack EEG, EOG and EMG into a matrix for every unique id
+
+Returns
+X_Train - Stacked EEG, EOG and EMG data
+Y_Train - Sleep Stage 
 '''
 def create_stacked_dataset(cleaned_pandas_dataframe):
     X_Train = []
