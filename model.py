@@ -4,6 +4,8 @@ from keras import initializers
 import keras.backend as K
 import tensorflow as tf
 
+
+
 def hybrid_LSTM(depth=2,conv_size=16,dense_size=512,input_dim=(5,9,100,),dropoutRate=0.2):
 	"""
 	Autoencoder model builder composes of CNNs and a LSTM
@@ -12,15 +14,17 @@ def hybrid_LSTM(depth=2,conv_size=16,dense_size=512,input_dim=(5,9,100,),dropout
 		conv_size (int): initial CNN filter size, doubled in each depth level
 		dense_size (int): size of latent vector and a number of filters of ConvLSTM2D
 		input_dim (tuple): input dimention, should be in (y_spatial,x_spatial,temporal)
-		dropoutRate (float): dropout rate used in all nodes
+		dropoutRate (float): dropout rate used in all nodes\
 	Return:
 		keras model
 	"""
 	"""Setup"""
+
 	temp_filter = conv_size
 	X = Input(shape=input_dim, name = 'input')
-	X = Permute((3,1,2))(X)  #move temporal axes to be first dim
-	X = Reshape((100,5,9,1))(X) #reshape (,1) to be feature of each spatial
+	model_input = X
+	#X = Permute((3,1,2))(X)  #move temporal axes to be first dim
+	X = Reshape((200,30000,3,1))(X) #reshape (,1) to be feature of each spatial
 
 	"""Encoder"""
 	for i in range(depth):
@@ -39,13 +43,13 @@ def hybrid_LSTM(depth=2,conv_size=16,dense_size=512,input_dim=(5,9,100,),dropout
 	"""Latent"""
 	latent = X
 
-	"""Setup for decoder""""
+	"""Setup for decoder"""
 	X = RepeatVector(100)(X)
-	temp_filter = temp_filter/2
+	temp_filter = int(temp_filter/2)
 
 	"""Decoder"""
-	X = LSTM(temp_filter*2*3, recurrent_dropout=dropoutRate ,return_sequences=True, implementation=2)(X)
-	X = Reshape((100,2,3,temp_filter))(X)
+	X = LSTM(int(temp_filter*2*3), recurrent_dropout=dropoutRate ,return_sequences=True, implementation=2)(X)
+	X = Reshape((100,2,3,int(temp_filter)))(X)
 	for i in range(depth):
 		for j in range(3):
 			if j == 0:

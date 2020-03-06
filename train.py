@@ -5,6 +5,8 @@ python train.py $X1$ $Y1$ ... $X4$ $Y4$ $model$ $out$
 '''
 
 import numpy as np
+import pickle
+import numpy as np
 from model import hybrid_LSTM, baseline
 from keras.callbacks import CSVLogger, ModelCheckpoint, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
@@ -23,6 +25,8 @@ from keras.losses import binary_crossentropy
 from numpy import unique
 from numpy import random 
 
+
+'''
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("X1", help="path to X.npy",
@@ -50,7 +54,7 @@ parser.add_argument("model", help="model name",
 parser.add_argument("out", help="output text path",
                     type=str)
 args = parser.parse_args()
-
+'''
 
 epochs=800
 
@@ -71,6 +75,7 @@ def normalize(X_train,X_val):
     #       X_val[:,channel_2d[i][0],channel_2d[i][1]]= (X_val[:,channel_2d[i][0],channel_2d[i][1]]-minn[i]) / (maxx[i]-minn[i])
     return X_train,X_val
 
+'''
 #train weight
 def weightFunction(y_train):
     weight = np.zeros(2) # class
@@ -160,18 +165,53 @@ with tf.device('/cpu:0'):
         #baseline is FC layers not CNN, need to flatten
         X_train = np.reshape(X_train,(X_train.shape[0],-1))
         X_test = np.reshape(X_test,(X_test.shape[0],-1))
+'''
 
+sleep_subsample = pickle.load(open("sleep_subsample.pkl", "rb"))
+'''
+cleaned_pandas_dataframe - A pandas dataframe of the format sent to me as sleep_subsample.pkl
+
+VStack EEG, EOG and EMG into a matrix for every unique id
+
+Returns
+X_Train - Stacked EEG, EOG and EMG data
+Y_Train - Sleep Stage 
+'''
+def create_stacked_dataset(cleaned_pandas_dataframe):
+    X_Train = []
+    Y_Train = []
+    for i in range(0, cleaned_pandas_dataframe.shape[0]):
+        EEG = np.array(cleaned_pandas_dataframe.iloc[i]["eeg"])
+        EOG = np.array(cleaned_pandas_dataframe.iloc[i]["eog"])
+        EMG = np.array(cleaned_pandas_dataframe.iloc[i]["emg"])
+
+        stacked_data = np.vstack((EEG,EOG,EMG))
+        X_Train.append(stacked_data)
+        Y_Train.append(cleaned_pandas_dataframe.iloc[i]["stage"])
+
+    return np.array(X_Train), Y_Train
+
+X_train, y_train = create_stacked_dataset(sleep_subsample)
+X_train = X_train.reshape((200,30000,3)) #Sample_num,Temporal, Dim_of Temporal
+
+X_test = X_train
+y_test = y_train
+
+#https://github.com/IoBT-VISTEC/EEGTransferLearning
+
+
+model = hybrid_LSTM(depth=2,conv_size=8,dense_size=512,input_dim=(200,3,30000,),dropoutRate=0.2)
 model.compile(optimizer=SGD(lr=0.002,decay=1E-5),loss=[mean_squared_error_ignore_0,'binary_crossentropy'],metrics=['accuracy'],loss_weights=[0.4,0.6])
-parallel_model = multi_gpu_model(model, gpus=2)
-parallel_model.__setattr__('callback_model',model)
-parallel_model.compile(optimizer=SGD(lr=0.002,decay=1E-5),loss=[mean_squared_error_ignore_0,'binary_crossentropy'],metrics=['accuracy'],loss_weights=[0.4,0.6])
+#parallel_model = multi_gpu_model(model, gpus=2)
+#parallel_model.__setattr__('callback_model',model)
+#parallel_model.compile(optimizer=SGD(lr=0.002,decay=1E-5),loss=[mean_squared_error_ignore_0,'binary_crossentropy'],metrics=['accuracy'],loss_weights=[0.4,0.6])
 
 
 print(model.summary())
 
 #train the model
-csv_logger = CSVLogger(out+'.log')
-filepath="out"+{epoch:02d}+".hdf5"
-tensorboard = TensorBoard(log_dir="../logs/{}".format(time()))
-checkpointer = ModelCheckpoint(monitor='val_loss', filepath=filepath, verbose=1, save_best_only=True)
-parallel_model.fit(x=X_train,y=[X_train,y_train],batch_size=512,epochs=epochs,validation_data=(X_test,[X_test,y_test]),callbacks=[checkpointer,csv_logger,tensorboard],sample_weight=[X_weight,X_weight]) 
+#csv_logger = CSVLogger(out+'.log')
+#filepath="out"+{epoch:02d}+".hdf5"
+#tensorboard = TensorBoard(log_dir="../logs/{}".format(time()))
+#checkpointer = ModelCheckpoint(monitor='val_loss', filepath=filepath, verbose=1, save_best_only=True)
+model.fit(x=X_train,y=[X_train,y_train],batch_size=512,epochs=epochs,validation_data=(X_test,[X_test,y_test]))
