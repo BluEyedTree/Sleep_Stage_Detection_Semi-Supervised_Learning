@@ -215,3 +215,8 @@ print(model.summary())
 #tensorboard = TensorBoard(log_dir="../logs/{}".format(time()))
 #checkpointer = ModelCheckpoint(monitor='val_loss', filepath=filepath, verbose=1, save_best_only=True)
 model.fit(x=X_train,y=[X_train,y_train],batch_size=512,epochs=epochs,validation_data=(X_test,[X_test,y_test]))
+
+#NOTE THE DIMENSIONALITY ISSUES STEM FROM HOW TIME DISTRUBED LAYERS ARE SUPPOSED TO WORK. LOOK INTO IT.
+#INFO
+#https://keras.io/layers/wrappers/
+#https://machinelearningmastery.com/timedistributed-layer-for-long-short-term-memory-networks-in-python/
