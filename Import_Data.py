@@ -1,5 +1,4 @@
 import pickle
-import pandas
 import numpy as np
 
 
@@ -29,10 +28,18 @@ def create_stacked_dataset(cleaned_pandas_dataframe):
         EOG = np.array(cleaned_pandas_dataframe.iloc[i]["eog"])
         EMG = np.array(cleaned_pandas_dataframe.iloc[i]["emg"])
 
-        stacked_data = np.vstack((EEG,EOG,EMG))
+        stacked_data = np.hstack((EEG,EOG,EMG)) #NEED TO GO BACK TO VSTACK IF USING CNN+LSTM HYBRID
         X_Train.append(stacked_data)
         Y_Train.append(cleaned_pandas_dataframe.iloc[i]["stage"])
 
-    return X_Train, Y_Train
+    return np.array(X_Train), Y_Train
+
+
+def get_data():
+    X_data, Y_data = create_stacked_dataset(sleep_subsample)
+    return X_data, Y_data
+
+
+#X_data, Y_data = create_stacked_dataset(sleep_subsample)
 
 
