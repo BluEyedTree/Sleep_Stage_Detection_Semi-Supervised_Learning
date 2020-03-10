@@ -9,6 +9,8 @@ from keras.utils import plot_model
 import Import_Data as data
 
 X_data, Y_data = data.get_data()
+#Format for shape of data: (#_Data_Points, #_Time_Steps, #_of dimensions for each timestep)
+#For this I concatenated all 3 signals. So there is only 1 number for each time step
 X_data = X_data.reshape((200,90000,1))
 
 # define input sequence
